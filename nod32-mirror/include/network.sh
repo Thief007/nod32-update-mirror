@@ -25,6 +25,8 @@
 [[ -z $NOD32MIRROR_DOWNLOAD_SPEED_LIMIT ]] && export NOD32MIRROR_DOWNLOAD_SPEED_LIMIT=0;
 [[ -z $NOD32MIRROR_DOWNLOAD_DELAY ]]       && export NOD32MIRROR_DOWNLOAD_DELAY=0;
 [[ -z $NOD32MIRROR_DOWNLOAD_TIMEOUT ]]     && export NOD32MIRROR_DOWNLOAD_TIMEOUT=5;
+[[ -z $NOD32MIRROR_READ_TIMEOUT ]]         && export NOD32MIRROR_READ_TIMEOUT=5;
+[[ -z $NOD32MIRROR_DNS_TIMEOUT ]]          && export NOD32MIRROR_DNS_TIMEOUT=0.5;
 [[ -z $NOD32MIRROR_DOWNLOAD_TRIES ]]       && export NOD32MIRROR_DOWNLOAD_TRIES=2;
 
 
@@ -70,7 +72,7 @@ function network_get_headers() {
     headers=$("$NOD32MIRROR_CURL_BIN" --location --insecure --head --silent --connect-timeout "$NOD32MIRROR_DOWNLOAD_TIMEOUT" --retry "$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent "$NOD32MIRROR_USERAGENT" --user "$username:$password" "$uri");
   } || {
     network_tool_enabled "$NOD32MIRROR_WGET_BIN" && {
-      headers=$("$NOD32MIRROR_WGET_BIN" --quiet --server-response --no-use-server-timestamps --no-check-certificate --spider --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" "$uri" 2>&1);
+      headers=$("$NOD32MIRROR_WGET_BIN" --quiet --server-response --no-use-server-timestamps --no-check-certificate --spider --dns-timeout="$NOD32MIRROR_DNS_TIMEOUT" --read-timeout="$NOD32MIRROR_READ_TIMEOUT" --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" "$uri" 2>&1);
     };
   };
   echo "$headers";
@@ -85,7 +87,7 @@ function network_get_content() {
     content=$("$NOD32MIRROR_CURL_BIN" --location --insecure --silent --connect-timeout "$NOD32MIRROR_DOWNLOAD_TIMEOUT" --retry "$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent "$NOD32MIRROR_USERAGENT" --user "$username:$password" "$uri");
   } || {
     network_tool_enabled "$NOD32MIRROR_WGET_BIN" && {
-      content=$("$NOD32MIRROR_WGET_BIN" --quiet -O - --content-on-error --no-use-server-timestamps --no-check-certificate --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" "$uri" 2>&1);
+      content=$("$NOD32MIRROR_WGET_BIN" --quiet -O - --content-on-error --no-use-server-timestamps --no-check-certificate --dns-timeout="$NOD32MIRROR_DNS_TIMEOUT" --read-timeout="$NOD32MIRROR_READ_TIMEOUT" --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" "$uri" 2>&1);
     };
   };
   echo "$content";
@@ -106,7 +108,7 @@ function network_download_file() {
     "$NOD32MIRROR_CURL_BIN" --location --fail --insecure --silent --connect-timeout "$NOD32MIRROR_DOWNLOAD_TIMEOUT" --retry "$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent "$NOD32MIRROR_USERAGENT" --user "$username:$password" -o "$save_filepath" "$uri" 1>/dev/null 2>&1;
   } || {
     network_tool_enabled "$NOD32MIRROR_WGET_BIN" && {
-      "$NOD32MIRROR_WGET_BIN" --quiet --no-check-certificate --no-use-server-timestamps --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" -O "$save_filepath" "$uri" 1>/dev/null 2>&1;
+      "$NOD32MIRROR_WGET_BIN" --quiet --no-check-certificate --no-use-server-timestamps --dns-timeout="$NOD32MIRROR_DNS_TIMEOUT" --read-timeout="$NOD32MIRROR_READ_TIMEOUT" --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --user-agent="$NOD32MIRROR_USERAGENT" --http-user="$username" --http-password="$password" -O "$save_filepath" "$uri" 1>/dev/null 2>&1;
     };
   };
   [ $? -eq 0 ] && return 0 || return 1;
@@ -160,7 +162,7 @@ function network_sync_remote_file() {
           speedlimit=" --limit-rate=$NOD32MIRROR_DOWNLOAD_SPEED_LIMIT""k ";
         }
         [[ $NOD32MIRROR_DOWNLOAD_DELAY -ne 0 ]] && sleep $NOD32MIRROR_DOWNLOAD_DELAY;
-        result=$("$NOD32MIRROR_WGET_BIN" --verbose --debug --cache=off --timestamping --no-use-server-timestamps --user-agent="$NOD32MIRROR_USERAGENT" --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --http-user="$username" --http-password="$password" $speedlimit --directory-prefix="$target_directory" "$uri" 2>&1);
+        result=$("$NOD32MIRROR_WGET_BIN" --verbose --debug --cache=off --timestamping --no-use-server-timestamps --user-agent="$NOD32MIRROR_USERAGENT" --dns-timeout="$NOD32MIRROR_DNS_TIMEOUT" --read-timeout="$NOD32MIRROR_READ_TIMEOUT" --connect-timeout="$NOD32MIRROR_DOWNLOAD_TIMEOUT" --tries="$NOD32MIRROR_DOWNLOAD_TRIES" --http-user="$username" --http-password="$password" $speedlimit --directory-prefix="$target_directory" "$uri" 2>&1);
         local debug_data=$(head -n 90 <<< "$result");
         ui_message 'debug' 'Wget result' "$debug_data";
         case "$result" in
