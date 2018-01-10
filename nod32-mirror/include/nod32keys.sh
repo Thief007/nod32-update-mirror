@@ -50,6 +50,21 @@ function nod32keys_get_new_free_keys() {
                  tr -d "\r" |\
                  awk '{getline b;printf("%s:%s\n",$0,b)}');
   };
+  # thx 2 @thief007 :)
+    local temp_directory="$(fs_get_temp_directory)";
+    local keys_file_name="ESET-Free-Keys.zip"
+    local remote_versions_file_uri="https://justhippo.com/ESET-Free-Keys.zip";
+    local username="";
+    local password="";
+    local local_keys_zip_path="$temp_directory/$keys_file_name";
+    network_download_file "$remote_versions_file_uri" "$username" "$password" "$local_keys_zip_path";
+    page_content="$(funzip ${local_keys_zip_path})";
+    [[ ! -z "$page_content" ]] && {
+    keys_list+=$(cat <<<  "$page_content" |\
+                 grep -e '^TRIAL\|^EAV' |\
+                 awk ' { OFS=":" ; print $1,$2} ');
+  };
+
   [[ ! -z "$keys_list" ]] && {
     echo "$keys_list" && return 0;
   };
